@@ -57,18 +57,19 @@ Mini repaso de las expresiones regex
 
 [Cheatsheet regex](https://rstudio.github.io/cheatsheets/regex.pdf)
 
-### Ejemplo 1
+### Ejemplo: motivación
 
 Cuando quiero extraer las letras que van después de un patron conocido podemos utilizar una expresión regular que mira hacia adelante. Por ejemplo, imaginemos que tenemos los siguientes códigos que identifican a distintas muestras:
 
-    - La primera letra indica el género de la muestra y un punto
-    - Después siguen 3 letras del epiteto específico 
-    - Posteriormente 2 o 3 letras que identifican la localidad en donde fue colectada la muestra
-    - Finalmente el número de muestra. 
+- La primera letra indica el género de la muestra y un punto
+- Después siguen 3 letras del epiteto específico 
+- Posteriormente 2 o 3 letras que identifican la localidad en donde fue colectada la muestra
+- Finalmente el número de muestra. 
 
 A nosotros nos interesa identificar la localidad y el número de muestra. Podemos utilizar la expresión "lookbehind" (ver hacia atrás) para identificar si en las muestras están los patrones de las especies que nos interesan y recuperar las letras que están después. 
 
 ```{r}
+#| echo: false
 codigos <- paste0(
   rep(c("Q.ins", "Q.corr", "Q.lae"), each = 10),
   rep(c("Ab", "Bc", "CDE", "De"), each = 2),
@@ -76,15 +77,26 @@ codigos <- paste0(
 )
 
 regex <- paste0("(?<=Q.ins|Q.corr|Q.lae)", "[[:alpha:]]+")
-regex
 
-str_extract(codigos, )
+cat(
+  "Códigos:\n",
+  codigos,
+  "\n",
+  "\n",
+  "Regex: ",
+  regex,
+  "\n",
+  "\n",
+  "Resultado esperado: \n",
+  str_extract(codigos, regex)
+)
 ```
 
 Podemos definir dos funciones que nos ayuden a construir el patrón que nos interesa:
 
 ```{r}
-# Función para generar la expresión regex que nos ayude a revisar que el patrón conocido esté antes de lo que nos interesa extraer (sin incluirlo)
+# Función para generar la expresión regex que nos ayude a revisar que el patrón
+# conocido esté antes de lo que nos interesa extraer (sin incluirlo)
 lookbehind <- function(pattern_to_search = NULL, negated = FALSE) {
   if (negated) {
     pattern <- paste0("(?<!", pattern_to_search, ")")
@@ -97,25 +109,22 @@ lookbehind <- function(pattern_to_search = NULL, negated = FALSE) {
 # Ejemplo
 texto <- "ABC123"
 
-regex <- paste0(lookbehind("ABC"), "\\d+")
+rx <- paste0(lookbehind("ABC"), "\\d+")
 
 cat(
-  "Ejemplo:\nTexto original:", texto,
+  "Ejemplo:\nTexto original:",
+  texto,
   "\nQueremos extraer: 123",
-  "\nRegex:", regex,
-  "\nResultado:", str_extract(texto, regex)
+  "\nRegex:",
+  rx,
+  "\nResultado:",
+  str_extract(texto, rx)
 )
-
-# Ejemplo con negación
-texto <- "ABC123 XYZ456"
-
-regex <- paste0(lookbehind("ABC", negated = TRUE),"\\b", "\\d+")
-
-str_extract_all(texto, regex)
 ```
 
 ```{r}
-# Funcion wraper (función envolvente) que nos permite escoger las clases de caracteres sin tener que acordarnos de la sintaxis
+# Funcion wraper (función envolvente) que nos permite escoger las clases de
+# caracteres sin tener que acordarnos de la sintaxis
 
 chr_class <- function(type, negated = FALSE, engine = c("posix", "perl")) {
   engine <- match.arg(engine)
@@ -160,7 +169,11 @@ chr_class <- function(type, negated = FALSE, engine = c("posix", "perl")) {
 Hagamos la prueba:
 
 ```{r}
-regex <- paste0(lookahead("Q.ins|Q.corr|Q.lae"), chr_class(type = "alpha"), "+")
+regex <- paste0(
+  lookbehind("Q.ins|Q.corr|Q.lae"),
+  chr_class(type = "alpha"),
+  "+"
+)
 
 str_extract(codigos, regex)
 ```
@@ -169,7 +182,7 @@ Además del lookbehind también hay lookahead para identificar el texto que se e
 
 ```{r}
 # Función para lookahead
-lookahead <- function(pattern_to_search, negated = FALSE){
+lookahead <- function(pattern_to_search, negated = FALSE) {
   if (negated) {
     pattern <- paste0("(?!", pattern_to_search, ")")
   } else {
@@ -181,13 +194,16 @@ lookahead <- function(pattern_to_search, negated = FALSE){
 # Ejemplo
 texto <- "ABC123"
 
-regex <- paste0("\\w+", lookahead("123"))
+rx <- paste0("\\w+", lookahead("123"))
 
 cat(
-  "Ejemplo:\nTexto original:", texto,
+  "Ejemplo:\nTexto original:",
+  texto,
   "\nQueremos extraer: ABC",
-  "\nRegex:", regex,
-  "\nResultado:", str_extract(texto, regex)
+  "\nRegex:",
+  rx,
+  "\nResultado:",
+  str_extract(texto, rx)
 )
 ```
 
@@ -200,6 +216,7 @@ fs::dir_tree("../RegexTools/R/")
 Para crear los archivos utilizaremos el siguiente código que genera archivos con los nombres de las funciones en la carpeta R.
 
 ```{r}
+#| eval: false
 use_r("chr_class")
 use_r("lookarounds")
 ```
@@ -207,14 +224,17 @@ use_r("lookarounds")
 Podemos cargar todas las funciones que creamos y revisar que estén cargadas como si vinieran de una librería en lugar de desde un script.
 
 ```{r}
+#| eval: false
 load_all()
-exists("chr_class", where = globalenv(), inherits = FALSE) # Si el resultado es TRUE entonces hay que volver a cargar la librería de devtools y volver a correr load_all()
-
+# Si el resultado es TRUE entonces hay que volver a cargar la librería de
+# devtools y volver a correr load_all()
+exists("chr_class", where = globalenv(), inherits = FALSE) 
 ```
 
 Posteriormente vamos a correr la función check() para actualizar muchos de los archivos del paquete y revisar que las partes del paquete funcionen correctamente entre ellas
 
 ```{r}
+#| eval: false
 check()
 ```
 
@@ -226,7 +246,9 @@ Title: Funciones para facilitar el uso de expresiones regulares
 Version: 0.0.0.9000
 Authors@R: 
     person("Sofía", "Zorrilla", , "sofia.zorrilla@example.com", role = c("aut", "cre"))
-Description: El paquete tiene como objetivo proporcionar herramientas que faciliten el uso de expresiones regulares mediante funciones *wrappers* que evitan la necesidad de aprender su sintaxis..
+Description: El paquete tiene como objetivo proporcionar herramientas que
+faciliten el uso de expresiones regulares mediante funciones *wrappers* que
+evitan la necesidad de aprender su sintaxis.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
@@ -237,12 +259,14 @@ RoxygenNote: 7.3.3
 Finalmente vamos a indicarle la licencia y hacer un check.
 
 ```{r}
+#| eval: false
 use_mit_license()
 ```
 
 Deberíamos tener 0 errores en este punto.
 
 ```{r}
+#| eval: false
 check()
 ```
 
@@ -260,8 +284,6 @@ Sin embargo, existen herramientas que facilitan la creación y el manejo de los 
 3. Proporciona herramientas que automatizan la generación y el mantenimiento de los archivos .Rd.
 
 4. Facilita la reutilización y organización de la documentación en paquetes grandes, donde múltiples funciones pueden compartir descripciones o secciones.
-
-Los comentarios de roxygen2 se organizan en bloques y etiquetas, y se identifican por comenzar con `#'` al inicio de cada línea.
 
 :::{.callout-tip}
 
@@ -292,20 +314,200 @@ add <- function(x, y) {
 ```
 
 ```{.r}
-#' Suma de dos números
-#' 
-#' @param x Un número.
-#' @param y Un número.
-#' @returns Vector numérico.
+#' Sumar dos números
+#'
+#' Calcula la suma de dos valores numéricos.
+#'
+#' @param x Numeric. Primer número a sumar.
+#' @param y Numeric. Segundo número a sumar.
+#'
+#' @returns Numeric. Resultado de la suma de `x` e `y`.
+#'
 #' @examples
 #' add(1, 1)
 #' add(10, 1)
+#'
+#' @export
 add <- function(x, y) {
   x + y
 }
 ```
 
+### Estructura de los bloques de roxygen
 
+Los comentarios de roxygen2 se organizan en bloques y etiquetas, y se identifican por comenzar con `#'` al inicio de cada línea.
+
+1. Todos los comentarios antes de una función (marcados por `#'` al inicio de la línea) constituyen un **bloque**.
+
+2. Un bloque está constituido por etiquetas (tags) que tienen el formato `@NombreEtiqueta ValorEtiqueta`, seguido de la descripción de la etiqueta. Por ejemplo, en la función de suma una etiqueta corresponde al argumento `x`:
+
+```
+#' @param x Numeric. Primer número a sumar.
+```
+
+3. Un bloque puede tener texto antes de la primera etiqueta (**introducción**)
+
+4. Por default, cada bloque genera un **tópico** (un archivo `.Rd`) en el directorio `man/`.
+
+:::{.callout-tip}
+
+La longitud de las líneas de la documentación sigue las prácticas de estilo del código. Para ajustarlas automáticamente puedes usar `ctrl + shift + /` o *Code* > *Reflow comment*
+
+:::
+
+**Ejemplo: str_unique()**
+
+La función `str_unique()` sirve para eliminar elementos duplicados en una vector de caracter. 
+
+::: {.column-screen-inset}
+:::{.columns }
+
+:::{.column width="45%"}
+
+El comentario de roxygen2 se debe ver así:
+
+```{.r}
+#' Remove duplicated strings
+#'
+#' `str_unique()` removes duplicated values, with optional control over
+#' how duplication is measured.
+#'
+#' @inheritParams str_detect
+#' @inheritParams str_equal
+#' @return A character vector, usually shorter than `string`.
+#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
+#' @examples
+#' str_unique(c("a", "b", "c", "b", "a"))
+#'
+#' str_unique(c("a", "b", "c", "B", "A"))
+#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
+#'
+#' # Use ... to pass additional arguments to stri_unique()
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
+#' @export
+
+```
+
+:::
+
+:::{.column width="5%"}
+
+:::
+
+:::{.column width="45%" align="left"}
+
+```{.r}
+------- Introducción -------
+#' Remove duplicated strings
+#'
+#' `str_unique()` removes duplicated values, with optional control over
+#' how duplication is measured.
+
+------ Etiquetas -----------
+#' @inheritParams str_detect
+#' @inheritParams str_equal
+#' @return A character vector, usually shorter than `string`.
+#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
+#' @examples
+#' str_unique(c("a", "b", "c", "b", "a"))
+#'
+#' str_unique(c("a", "b", "c", "B", "A"))
+#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
+#'
+#' # Use ... to pass additional arguments to stri_unique()
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
+#' @export
+
+```
+
+:::
+:::
+:::
+
+### Etiquetas y sintaxis importante
+
+#### Sintaxis
+
+1. Para referenciar código dentro de la documentación se utilizan las comillas invertidas (backticks) 
+
+```{.r}
+#' La función `ejemplo()` bla bla bla 
+```
+
+2. Para generar una liga a la documentación de otras funciones referidas en tu documentación utiliza corchetes 
+
+```{.r}
+#' ver función similar [stringr::str_unique()]
+```
+
+3. Referenciar viñetas (documentos con información o tutoriales acerca de las funciones de un paquete)
+
+```{.r}
+vignette("rd-formatting", package = "roxygen2")
+```
+
+4. Listas
+
+```{.r}
+#' Las ventajas de la función son:
+#' * Ventaja 1
+#' * Ventaja 2
+```
+
+#### Título, descripción y detalles
+
+- *Título*: Debe describir muy brevemente lo que hace una función. El título se debe pensar de forma que cuando el usuario lea el índice de funciones del paquete se lleve una idea de lo que hacen. 
+
+  - mutate(): Create, modify, and delete columns
+  - summarise(): Summarise each group down to one row
+  - filter(): Keep rows that match a condition
+  - select(): Keep or drop columns using their names and types
+  - arrange(): Order rows using column values
+
+- *Descripción*: Párrafo breve en el que se describe la función. Si es de un sólo párrafo se puede escribir sin una etiqueta de `@description` explícita.  
+
+- *Detalles*: Explicaciones adicionales (opcional), se escribe utilizando la etiqueta `@details`. Cuando se necesitan comunicar muchos detalles se puede dividir en secciones utilizando la etiqueta `@section`
+
+
+#### Argumentos
+
+Los argumentos se enuncian con la etiqueta `@param`. 
+
+- Se debe describir el tipo de objeto que se espera recibir en cada uno y qué acciones tienen. 
+- Muchas veces describen los valores que tienen por default 
+- En los casos en los que tienen un número limitado de opciones, estas pueden ser enlistadas. Cuando son muchas se puede poner en los detalles.
+- En algunos casos en los que los argumentos tienen la misma descripción se pueden agrupar separados por comas en la misma etiqueta: 
+
+  ```
+  @param x,y Par de vectores de caracter
+  ```
+
+#### Argumentos heredados
+
+En los casos en los que se tienen funciones muy relacionadas que comparten argumentos y su correspondiente descripción se pueden incluir directamente utilizando la etiqueta `@inheritParams`
+
+
+
+
+
+
+
+## Flujo de trabajo de roxygen
+
+```{mermaid}
+%%| fig-cap: Flujo de trabajo para generar documentación de funciones usando roxygen2
+%%| layout-align: center
+
+
+flowchart TD
+  A["Escribir función"] --> B["Agregar comentario roxygen"]
+  B --> C["Ejecutar devtools::document()"]
+  C --> D["Ver documentación con ?función"]
+  D --> B
+    
+```
 
 ## 
 

@@ -1,4 +1,5 @@
-# Funcion wraper (función envolvente) que nos permite escoger las clases de caracteres sin tener que acordarnos de la sintaxis
+# Funcion wraper (función envolvente) que nos permite escoger las clases de
+# caracteres sin tener que acordarnos de la sintaxis
 
 chr_class <- function(type, negated = FALSE, engine = c("posix", "perl")) {
   engine <- match.arg(engine)
