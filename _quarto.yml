@@ -1,0 +1,36 @@
+project:
+  type: website
+  output-dir: docs
+  render: 
+    - planeacion-taller.qmd
+    - ejercicios.qmd
+
+website:
+  title: "Documentación de funciones"
+  navbar:
+    left:
+      - href: planeacion-taller.qmd
+        text: Planeación del taller
+      - href: ejercicios.qmd
+        text: Ejercicios
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contenido"
+    number-sections: true
+    highlight-style: github
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 5
+    embed-resources: true
+    code-overflow: scroll
+    code-line-numbers: false
+    css: styles.css
+execute:
+  warning: false
+  message: false
+lang: es

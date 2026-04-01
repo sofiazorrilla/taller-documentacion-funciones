@@ -1,0 +1,311 @@
+---
+title: Documentación de funciones
+author: Sofía Zorrilla Azcué
+format: html
+---
+
+## Importancia de la documentación de funciones
+
+## Crear un mini paquete
+
+```{r}
+# install.packages("devtools")
+# install.packages("usethis")
+# install.packages("roxygen2")
+
+library(devtools)
+library(usethis)
+library(roxygen2)
+library(stringr)
+
+```
+
+Los comentarios de Roxygen2 se pueden utilizar para documentar nuestras funciones aún si no las vamos a utilizar en algún paquete. Sin embargo, en este taller, para ver el flujo de trabajo completo, vamos a generar un mini paquete.
+
+Primero vamos a crear un proyecto de R de tipo paquete utilizando la función `create_package()` del paquete devtools. El argumento de la función debe ser la ruta a donde lo queremos guardar y el directorio debe llamarse de la forma en la que queremos llamar nuestro paquete. 
+
+```{r}
+#| eval: false
+
+# Crear un repositorio de paquete
+usethis::create_package("/home/sofia/Documents/talleres/RegexTools")
+
+```
+
+Automáticamente, la función va a generar la estructura básica de un paquete que contiene:
+
+```{r}
+library(fs)
+
+fs::dir_tree("../RegexTools/", recurse = F,all = T)
+
+```
+
+1. Un documento de proyecto `randomR.Rproj`
+2. Documentos para indicar los archivos que se deben ignorar cuando se construya el paquete desde source (`.Rbuildignore`) y documentos que se deben ignorar cuando guardemos nuestro historial de versiones y lo conectemos con github (`.gitignore`)
+3. `DESCRIPTION` = Metadatos acerca del paquete
+4. `NAMESPACE` = Declara las funciones que el paquete exporta para uso externo y las que importa de otras herramientas (no se edita a mano)
+5. `R/` Directorio en el que guardaremos las funciones
+
+## Guardar funciones 
+
+Guardaremos algunas funciones que he escrito previamente. Son funciones que ayudan a llamar patrones útiles en las expresiones regulares que constantemente se me olvidan.
+
+### Regex
+
+Mini repaso de las expresiones regex
+
+[Cheatsheet regex](https://rstudio.github.io/cheatsheets/regex.pdf)
+
+### Ejemplo 1
+
+Cuando quiero extraer las letras que van después de un patron conocido podemos utilizar una expresión regular que mira hacia adelante. Por ejemplo, imaginemos que tenemos los siguientes códigos que identifican a distintas muestras:
+
+    - La primera letra indica el género de la muestra y un punto
+    - Después siguen 3 letras del epiteto específico 
+    - Posteriormente 2 o 3 letras que identifican la localidad en donde fue colectada la muestra
+    - Finalmente el número de muestra. 
+
+A nosotros nos interesa identificar la localidad y el número de muestra. Podemos utilizar la expresión "lookbehind" (ver hacia atrás) para identificar si en las muestras están los patrones de las especies que nos interesan y recuperar las letras que están después. 
+
+```{r}
+codigos <- paste0(
+  rep(c("Q.ins", "Q.corr", "Q.lae"), each = 10),
+  rep(c("Ab", "Bc", "CDE", "De"), each = 2),
+  1:10
+)
+
+regex <- paste0("(?<=Q.ins|Q.corr|Q.lae)", "[[:alpha:]]+")
+regex
+
+str_extract(codigos, )
+```
+
+Podemos definir dos funciones que nos ayuden a construir el patrón que nos interesa:
+
+```{r}
+# Función para generar la expresión regex que nos ayude a revisar que el patrón conocido esté antes de lo que nos interesa extraer (sin incluirlo)
+lookbehind <- function(pattern_to_search = NULL, negated = FALSE) {
+  if (negated) {
+    pattern <- paste0("(?<!", pattern_to_search, ")")
+  } else {
+    pattern <- paste0("(?<=", pattern_to_search, ")")
+  }
+  return(pattern)
+}
+
+# Ejemplo
+texto <- "ABC123"
+
+regex <- paste0(lookbehind("ABC"), "\\d+")
+
+cat(
+  "Ejemplo:\nTexto original:", texto,
+  "\nQueremos extraer: 123",
+  "\nRegex:", regex,
+  "\nResultado:", str_extract(texto, regex)
+)
+
+# Ejemplo con negación
+texto <- "ABC123 XYZ456"
+
+regex <- paste0(lookbehind("ABC", negated = TRUE),"\\b", "\\d+")
+
+str_extract_all(texto, regex)
+```
+
+```{r}
+# Funcion wraper (función envolvente) que nos permite escoger las clases de caracteres sin tener que acordarnos de la sintaxis
+
+chr_class <- function(type, negated = FALSE, engine = c("posix", "perl")) {
+  engine <- match.arg(engine)
+
+  clases <- list(
+    digit = c(posix = "[[:digit:]]", perl = "\\d"),
+    lower = c(posix = "[[:lower:]]", perl = "[a-z]"),
+    upper = c(posix = "[[:upper:]]", perl = "[A-Z]"),
+    alpha = c(posix = "[[:alpha:]]", perl = "[A-Za-z]"),
+    alnum = c(posix = "[[:alnum:]]", perl = "[A-Za-z0-9]"),
+    word = c(posix = "[[:alnum:]_]", perl = "\\w"),
+    xdigit = c(posix = "[[:xdigit:]]", perl = "[0-9A-Fa-f]"),
+    blank = c(posix = "[[:blank:]]", perl = "[ \\t]"),
+    space = c(posix = "[[:space:]]", perl = "\\s"),
+    punct = c(posix = "[[:punct:]]", perl = "[[:punct:]]"),
+    graph = c(posix = "[[:graph:]]", perl = "[[:graph:]]"),
+    print = c(posix = "[[:print:]]", perl = "[[:print:]]"),
+    cntrl = c(posix = "[[:cntrl:]]", perl = "[[:cntrl:]]")
+  )
+
+  if (!type %in% names(clases)) {
+    stop("Tipo de clase de caracter no reconocido")
+  }
+
+  pattern <- clases[[type]][[engine]]
+
+  # manejar negación
+  if (negated) {
+    pattern <- switch(
+      pattern,
+      "\\d" = "\\D",
+      "\\w" = "\\W",
+      "\\s" = "\\S",
+      paste0("[^", gsub("^\\[|\\]$", "", pattern), "]")
+    )
+  }
+
+  return(pattern)
+}
+```
+
+Hagamos la prueba:
+
+```{r}
+regex <- paste0(lookahead("Q.ins|Q.corr|Q.lae"), chr_class(type = "alpha"), "+")
+
+str_extract(codigos, regex)
+```
+
+Además del lookbehind también hay lookahead para identificar el texto que se encuentra después del patrón conocido.
+
+```{r}
+# Función para lookahead
+lookahead <- function(pattern_to_search, negated = FALSE){
+  if (negated) {
+    pattern <- paste0("(?!", pattern_to_search, ")")
+  } else {
+    pattern <- paste0("(?=", pattern_to_search, ")")
+  }
+  return(pattern)
+}
+
+# Ejemplo
+texto <- "ABC123"
+
+regex <- paste0("\\w+", lookahead("123"))
+
+cat(
+  "Ejemplo:\nTexto original:", texto,
+  "\nQueremos extraer: ABC",
+  "\nRegex:", regex,
+  "\nResultado:", str_extract(texto, regex)
+)
+```
+
+Estas funciones las vamos a guardar en dos archivos `chr_class.R` y `lookarounds.R` en el directorio R de nuestro paquete. Las funciones que están relacionadas (como lookahead y lookbehind) las podemos poner en un solo archivo, solo hay que cuidar que no se vuelvan archivos demasiado largos y difíciles de mantener. 
+
+```{r}
+fs::dir_tree("../RegexTools/R/")
+```
+
+Para crear los archivos utilizaremos el siguiente código que genera archivos con los nombres de las funciones en la carpeta R.
+
+```{r}
+use_r("chr_class")
+use_r("lookarounds")
+```
+
+Podemos cargar todas las funciones que creamos y revisar que estén cargadas como si vinieran de una librería en lugar de desde un script.
+
+```{r}
+load_all()
+exists("chr_class", where = globalenv(), inherits = FALSE) # Si el resultado es TRUE entonces hay que volver a cargar la librería de devtools y volver a correr load_all()
+
+```
+
+Posteriormente vamos a correr la función check() para actualizar muchos de los archivos del paquete y revisar que las partes del paquete funcionen correctamente entre ellas
+
+```{r}
+check()
+```
+
+Vamos a editar el archivo `DESCRIPTION` de la siguiente forma: 
+
+```{.r}
+Package: RegexTools
+Title: Funciones para facilitar el uso de expresiones regulares
+Version: 0.0.0.9000
+Authors@R: 
+    person("Sofía", "Zorrilla", , "sofia.zorrilla@example.com", role = c("aut", "cre"))
+Description: El paquete tiene como objetivo proporcionar herramientas que faciliten el uso de expresiones regulares mediante funciones *wrappers* que evitan la necesidad de aprender su sintaxis..
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+```
+
+Finalmente vamos a indicarle la licencia y hacer un check.
+
+```{r}
+use_mit_license()
+```
+
+Deberíamos tener 0 errores en este punto.
+
+```{r}
+check()
+```
+
+
+## Documentación
+
+En los repositorios de paquetes de R, en la carpeta `man/` se encuentran archivos `.Rd` (*R documentation*) que contienen la documentación de todas las funciones, datos y objetos definidos en el paquete. Estos son los archivos que se muestran en la pestaña de ayuda cuando usamos `?funcion` o `help(funcion)`. Dichos documentos pueden renderizarse a HTML, PDF o texto plano.
+
+Sin embargo, existen herramientas que facilitan la creación y el manejo de los archivos `.Rd`. En particular, el paquete **roxygen2** permite incluir comentarios con un formato específico directamente sobre la definición de cada función, a partir de los cuales se generan automáticamente los archivos de documentación. Esto ofrece varias ventajas:
+
+1. Permite mantener la documentación junto al código que define cada función, facilitando su actualización cuando el código cambia.
+
+2. Permite usar Markdown para escribir la documentación de forma más sencilla y legible.
+
+3. Proporciona herramientas que automatizan la generación y el mantenimiento de los archivos .Rd.
+
+4. Facilita la reutilización y organización de la documentación en paquetes grandes, donde múltiples funciones pueden compartir descripciones o secciones.
+
+Los comentarios de roxygen2 se organizan en bloques y etiquetas, y se identifican por comenzar con `#'` al inicio de cada línea.
+
+:::{.callout-tip}
+
+Para insertar la estructura de los comentarios de roxygen2 en Rstudio se puede hacer en *Code* > *Insertar esqueleto roxygen*. Automáticamente detectará que es una función y pre-llenará algunos de los campos.
+
+:::
+
+El esqueleto tiene el siguiente formato:
+
+1. Título de la función y breve descripción
+
+2. `@param argumento` Cada argumento debe ir definido. Aqui se pone el tipo de dato que puede recibir, cuál es su valor por default 
+
+```{.r}
+#' Title
+#'
+#' @param x
+#' @param y
+#'
+#' @returns
+#'
+#' @export
+#' @examples
+add <- function(x, y) {
+  x + y
+}
+
+```
+
+```{.r}
+#' Suma de dos números
+#' 
+#' @param x Un número.
+#' @param y Un número.
+#' @returns Vector numérico.
+#' @examples
+#' add(1, 1)
+#' add(10, 1)
+add <- function(x, y) {
+  x + y
+}
+```
+
+
+
+## 
+
