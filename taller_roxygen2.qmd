@@ -1,0 +1,370 @@
+---
+title: "Documentación de Funciones en R"
+subtitle: "Usando **roxygen2**"
+author: "Sofía Zorrilla Azcué"
+format:
+  revealjs:
+    theme: default
+    highlight-style: github
+    slide-number: true
+    progress: true
+    transition: slide
+    background-transition: fade
+    footer: "Documentación con roxygen2 · R Packages (2e)"
+    smaller: true
+#    css: styles.css
+    self-contained: true
+execute:
+  echo: true
+  eval: false
+---
+
+## ¿Qué es una función? 
+
+<br>
+
+Una función es una **secuencia de operaciones** guardadas bajo un mismo nombre que facilita la organización y reutilización del código.
+
+<br>
+
+```{r}
+add <- function(a, b) {
+  c <- a + b
+  return(c)
+}
+```
+
+<br>
+
+::: {.fragment}
+> **Sugerencia:** Si copias y pegas código más de dos veces, conviértelo en una función.
+:::
+
+---
+
+## Documentar con comentarios {auto-animate=true}
+
+<br>
+
+Una forma común es usar comentarios dentro del script:
+
+```{r}
+# Suma de dos números enteros
+add <- function(a, b) {
+  # a y b deben ser dos números enteros
+  c <- a + b
+  # El resultado también será un número entero
+  return(c)
+}
+```
+
+<br>
+
+::: {.fragment}
+#### ¿Cuál es el problema? {.callout-warning}
+
+Los comentarios no generan la **ayuda estructurada** que aparece al usar `?funcion` o `help(funcion)`.
+:::
+
+---
+
+## Roxygen2 
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### ¿Qué hace?{.small}
+
+Convierte comentarios especiales (`#'`) en archivos de documentación `.Rd` que R puede renderizar.
+
+:::
+::: {.column width="50%"}
+### ¿Por qué usarlo?
+
+::: {.incremental}
+- Documentación junto al código
+- Soporte de Markdown
+- Generación automática de `.Rd`
+- Fácil de mantener actualizado
+:::
+:::
+:::
+
+---
+
+## Insertar el esqueleto en RStudio
+
+::: {.callout-tip}
+## Atajo rápido
+
+Ve a **Code → Insertar esqueleto roxygen**
+
+RStudio detecta automáticamente los argumentos de la función y pre-llena el esqueleto.
+:::
+
+```{r}
+#' Title
+#'
+#' @param x
+#' @param y
+#'
+#' @returns
+#'
+#' @export
+#' @examples
+add <- function(a, b) {
+  c <- a + b
+  return(c)
+}
+```
+
+---
+
+## Ejemplo completo {auto-animate=true}
+
+```{r}
+#' Sumar dos números
+#'
+#' Calcula la suma de dos valores numéricos.
+#'
+#' @param x Numeric. Primer número a sumar.
+#' @param y Numeric. Segundo número a sumar.
+#'
+#' @returns Numeric. Resultado de la suma de `x` e `y`.
+#'
+#' @examples
+#' add(1, 1)
+#' add(10, 1)
+#'
+#' @export
+add <- function(a, b) {
+  c <- a + b
+  return(c)
+}
+```
+
+---
+
+## Partes de un bloque roxygen 
+
+```{.r}
+------- Introducción -------
+#' Remove duplicated strings
+#'
+#' `str_unique()` removes duplicated values, with optional control over
+#' how duplication is measured.
+
+------ Etiquetas -----------
+#' @inheritParams str_detect
+#' @inheritParams str_equal
+#' @return A character vector, usually shorter than `string`.
+#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
+#' @examples
+#' str_unique(c("a", "b", "c", "b", "a"))
+#'
+#' str_unique(c("a", "b", "c", "B", "A"))
+#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
+#'
+#' # Use ... to pass additional arguments to stri_unique()
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
+#' @export
+
+```
+
+::: {.fragment}
+::: {.callout-note}
+Cada bloque genera un **tópico** (archivo `.Rd`) en el directorio `man/`.
+:::
+:::
+
+---
+
+## Sintaxis importante
+
+
+| Sintaxis | Uso |
+|---|---|
+| `` `funcion()` `` | Código en línea |
+| `[pkg::funcion()]` | Liga a documentación de otra función |
+| `vignette("nombre", package = "pkg")` | Ligar a una viñeta |
+
+<br>
+
+**Listas**
+
+```
+#' Las ventajas de la función son:
+#' * Ventaja 1
+#' * Ventaja 2
+```
+
+---
+
+## Título y descripción
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+
+**Ejemplo**
+
+```{r}
+#' Create, modify, and delete columns
+#'
+#' `mutate()` adds new variables and 
+#' preserves existing ones.
+#'
+#' @description
+#' Un párrafo más largo si hace falta.
+#'
+#' @details
+#' Información técnica adicional...
+```
+:::
+::: {.column width="50%"}
+
+**Buenas prácticas del título**
+
+```
+mutate()   → Create, modify, and delete columns
+summarise()→ Summarise each group to one row
+filter()   → Keep rows that match a condition
+select()   → Keep or drop columns by name
+arrange()  → Order rows using column values
+```
+:::
+:::
+
+<br>
+
+::: {.callout-tip}
+El **título** debe entenderse al leer el índice del paquete, sin ver la función.
+:::
+
+---
+
+## Argumentos `@param`
+
+:::{.columns}
+:::{.column width="70%"}
+
+<br>
+
+**Parámetros**
+
+```{r}
+#' @param x Numeric. Primer número a sumar.
+#' @param y Numeric. Segundo número a sumar.
+#' @param na.rm Logical. Si es `TRUE`, los valores `NA` se eliminan
+#'   antes del cálculo. Por default es `FALSE`.
+#' @param method Character. Método a usar. Una de `"pearson"` (default),
+#'   `"kendall"`, o `"spearman"`. Puede ser abreviado.
+```
+
+<br>
+
+**Argumentos con la misma descripción**
+
+```{r}
+#' @param x,y Par de vectores de caracteres a comparar.
+```
+:::
+
+::: {.column width="30%"}
+
+<br>
+
+**Buenas prácticas**
+
+::: {.incremental}
+- Indicar el **tipo de dato** esperado
+- Describir el **valor por default**
+- Listar las **opciones válidas** si son pocas
+:::
+:::
+:::
+---
+
+## Return y Examples
+
+::: {.columns}
+::: {.column width="50%"}
+### `@returns`
+```{r}
+#' @returns A character vector, 
+#'   usually shorter than `string`.
+```
+
+Describe:
+
+- El **tipo** de objeto devuelto
+- Sus **dimensiones** si aplica
+- Si puede devolver `NULL` o `NA`
+:::
+::: {.column width="50%"}
+### `@examples`
+```{r}
+#' @examples
+#' add(1, 1)
+#' add(10, 1)
+#'
+#' # Caso especial
+#' add(0, 0)
+```
+
+Los ejemplos **deben ejecutarse** sin error al hacer `R CMD check`.
+:::
+:::
+
+---
+
+## Heredar y reutilizar: `@inheritParams`
+
+Cuando varias funciones comparten argumentos, evita repetirte:
+
+```{r}
+#' @inheritParams str_detect
+```
+
+::: {.fragment}
+Esto copia la documentación del `@param` de `str_detect` a tu función.
+
+También existe `@inherit` para copiar otras secciones completas:
+
+```{r}
+#' @inherit str_detect return
+#' @inherit str_detect details
+```
+:::
+
+::: {.callout-tip}
+## Atajo de formato
+
+Usa `Ctrl + Shift + /` o **Code → Reflow comment** para ajustar automáticamente la longitud de las líneas.
+:::
+
+---
+
+
+
+---
+
+## Resumen {background-color="#0f3460"}
+
+| Etiqueta | Uso |
+|---|---|
+| `@param` | Describir argumentos |
+| `@returns` | Describir el objeto de salida |
+| `@examples` | Ejemplos ejecutables |
+| `@export` | Hacer la función pública |
+| `@details` | Detalles adicionales |
+| `@seealso` | Ligar funciones relacionadas |
+| `@inheritParams` | Heredar descripción de parámetros |
+| `@section` | Dividir detalles en secciones |
+
+---
+
+

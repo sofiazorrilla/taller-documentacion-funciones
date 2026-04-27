@@ -4,14 +4,609 @@ author: Sofía Zorrilla Azcué
 format: html
 ---
 
-## Importancia de la documentación de funciones
+El taller está basado en los capítulos "Getting started" y "Documentation" del libro [R Packages (2e)](https://r-pkgs.org/man.html#title-description-details)
 
-## Crear un mini paquete
+## Repaso: ¿Qué es una función?
+
+Una función es una secuencia de operaciones guardadas bajo un mismo nombre de forma que facilita la organización y nos permite reutilizar el código.
+
+La estructura básica de una función es la siguiente
+
+``` r
+
+add <- function(a,b){
+  c <- a + b
+  return(c)
+}
+
+substract <- function(a,b){
+  c <- a - b
+  return(c)
+}
+```
+
+Incluso si las funciones son aparentemente sencillas, siempre es recomendable documentar adecuadamente lo que hacen, cómo lo hacen, qué resultado deberían entregar y qué características tienen los argumentos que pueden recibir.
+
+Una forma común de documentar es utilizando comentarios.
+
+``` r
+
+# Suma de dos números enteros
+
+add <- function(a,b){
+
+  # a y b deben ser dos números enteros
+  c <- a + b
+  
+  # El resultado también será un número entero
+  return(c)
+}
+```
+
+Sin embargo, seguramente también habrás consultado las ayudas de las funciones que vienen en los paquetes que utilizas normalmente. Estos documentos tienen un formato estructurado que nos permite encontrar fácilmente la información que necesitamos, estandarizan los rubros que es necesario incluir y presentan un formato más estético que los comentarios dentro de un script.
+
+## Documentación con Roxygen2
+
+![](img/logo_roxigen2.png){fig-align="center"}
+
+En los repositorios de paquetes de R, en la carpeta `man/` se encuentran archivos `.Rd` (*R documentation*) que contienen la documentación de todas las funciones, datos y objetos definidos en el paquete. Estos son los archivos que se muestran en la pestaña de ayuda cuando usamos `?funcion` o `help(funcion)`. Dichos documentos pueden renderizarse a HTML, PDF o texto plano.
+
+Sin embargo, existen herramientas que facilitan la creación y el manejo de los archivos `.Rd`. En particular, el paquete **roxygen2** permite incluir comentarios con un formato específico directamente sobre la definición de cada función, a partir de los cuales se generan automáticamente los archivos de documentación. Esto ofrece varias ventajas:
+
+1.  Permite mantener la documentación junto al código que define cada función, facilitando su actualización cuando el código cambia.
+
+2.  Permite usar Markdown para escribir la documentación de forma más sencilla y legible.
+
+3.  Proporciona herramientas que automatizan la generación y el mantenimiento de los archivos .Rd.
+
+4.  Facilita la reutilización y organización de la documentación en paquetes grandes, donde múltiples funciones pueden compartir descripciones o secciones.
+
+::: callout-tip
+Para insertar la estructura de los comentarios de roxygen2 en Rstudio se puede hacer en *Code* \> *Insertar esqueleto roxygen*. Automáticamente detectará que es una función y pre-llenará algunos de los campos.
+:::
+
+El esqueleto tiene el siguiente formato:
+
+1.  Título de la función y breve descripción
+
+2.  `@etiqueta nombre/descripción` Cada etiqueta debe ir definido. Aqui se pone el tipo de dato que puede recibir, cuál es su valor por default, qué operaciones realiza la función, qué se espera como resultado y ejemplos de cómo usarla.
+
+``` r
+#' Title
+#'
+#' @param x
+#' @param y
+#'
+#' @returns
+#'
+#' @export
+#' @examples
+add <- function(a, b) {
+  c <- a + b
+  return(c)
+}
+```
+
+``` r
+#' Sumar dos números
+#'
+#' Calcula la suma de dos valores numéricos.
+#'
+#' @param a Numeric. Primer número a sumar.
+#' @param b Numeric. Segundo número a sumar.
+#'
+#' @returns Numeric. Resultado de la suma de `a` y `b`.
+#'
+#' @examples
+#' add(1, 1)
+#' add(10, 1)
+#'
+#' @export
+add <- function(a, b) {
+  c <- a + b
+  return(c)
+}
+```
+
+### Estructura de los bloques de roxygen
+
+Los comentarios de roxygen2 se organizan en bloques y etiquetas, y se identifican por comenzar con `#'` al inicio de cada línea.
+
+1.  Todos los comentarios antes de una función (marcados por `#'` al inicio de la línea) constituyen un **bloque**.
+
+2.  Un bloque está constituido por etiquetas (tags) que tienen el formato `@NombreEtiqueta ValorEtiqueta`, seguido de la descripción de la etiqueta. Por ejemplo, en la función de suma una etiqueta corresponde al argumento `x`:
+
+```         
+#' @param x Numeric. Primer número a sumar.
+```
+
+3.  Un bloque puede tener texto antes de la primera etiqueta (**introducción**)
+
+4.  Por default, cada bloque genera un **tópico** (un archivo `.Rd`) en el directorio `man/`.
+
+::: callout-tip
+La longitud de las líneas de la documentación sigue las prácticas de estilo del código. Para ajustarlas automáticamente puedes usar `ctrl + shift + /` o *Code* \> *Reflow comment*
+:::
+
+**Ejemplo: str_unique()**
+
+La función `str_unique()` sirve para eliminar elementos duplicados en una vector de caracter.
+
+::::::: column-screen-inset
+:::::: columns
+::: {.column width="45%"}
+El comentario de roxygen2 se debe ver así:
+
+``` r
+#' Remove duplicated strings
+#'
+#' `str_unique()` removes duplicated values, with optional control over
+#' how duplication is measured.
+#'
+#' @inheritParams str_detect
+#' @inheritParams str_equal
+#' @return A character vector, usually shorter than `string`.
+#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
+#' @examples
+#' str_unique(c("a", "b", "c", "b", "a"))
+#'
+#' str_unique(c("a", "b", "c", "B", "A"))
+#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
+#'
+#' # Use ... to pass additional arguments to stri_unique()
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
+#' @export
+```
+:::
+
+::: {.column width="5%"}
+:::
+
+::: {.column width="45%" align="left"}
+``` r
+------- Introducción -------
+#' Remove duplicated strings
+#'
+#' `str_unique()` removes duplicated values, with optional control over
+#' how duplication is measured.
+
+------ Etiquetas -----------
+#' @inheritParams str_detect
+#' @inheritParams str_equal
+#' @return A character vector, usually shorter than `string`.
+#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
+#' @examples
+#' str_unique(c("a", "b", "c", "b", "a"))
+#'
+#' str_unique(c("a", "b", "c", "B", "A"))
+#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
+#'
+#' # Use ... to pass additional arguments to stri_unique()
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
+#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
+#' @export
+```
+:::
+::::::
+:::::::
+
+### Etiquetas y sintaxis importante
+
+#### Sintaxis
+
+1.  Para referenciar código dentro de la documentación se utilizan las comillas invertidas (backticks)
+
+``` r
+#' La función `ejemplo()` bla bla bla 
+```
+
+2.  Para generar una liga a la documentación de otras funciones referidas en tu documentación utiliza corchetes
+
+``` r
+#' ver función similar [stringr::str_unique()]
+```
+
+3.  Referenciar viñetas (documentos con información o tutoriales acerca de las funciones de un paquete)
+
+``` r
+vignette("rd-formatting", package = "roxygen2")
+```
+
+4.  Listas
+
+``` r
+#' Las ventajas de la función son:
+#' * Ventaja 1
+#' * Ventaja 2
+```
+
+#### Título, descripción y detalles
+
+- *Título*: Debe describir muy brevemente lo que hace una función. El título se debe pensar de forma que cuando el usuario lea el índice de funciones del paquete se lleve una idea de lo que hacen.
+
+  - mutate(): Create, modify, and delete columns
+  - summarise(): Summarise each group down to one row
+  - filter(): Keep rows that match a condition
+  - select(): Keep or drop columns using their names and types
+  - arrange(): Order rows using column values
+
+- *Descripción*: Párrafo breve en el que se describe la función. Si es de un sólo párrafo se puede escribir sin una etiqueta de `@description` explícita.
+
+- *Detalles*: Explicaciones adicionales (opcional), se escribe utilizando la etiqueta `@details`. Cuando se necesitan comunicar muchos detalles se puede dividir en secciones utilizando la etiqueta `@section`
+
+#### Argumentos
+
+Los argumentos se enuncian con la etiqueta `@param`.
+
+- Se debe describir el tipo de objeto que se espera recibir en cada uno y qué acciones tienen.
+- Muchas veces describen los valores que tienen por default
+- En los casos en los que tienen un número limitado de opciones, estas pueden ser enlistadas. Cuando son muchas se puede poner en los detalles.
+- En algunos casos en los que los argumentos tienen la misma descripción se pueden agrupar separados por comas en la misma etiqueta:
+
+``` r
+#' @param x,y Par de vectores de caracter
+```
+
+#### Return (Resultado)
+
+Uno de los aspectos más importantes de la documentación es describir el resultado esperado. Lo más importante es describir la forma del objeto que obtendremos: qué tipo de objeto esperamos obtener, qué dimensiones tiene, etc.
+
+En esta sección se pueden describir los warnings esperados.
+
+``` r
+#' @return Integer. Resultado de la suma de dos números
+```
+
+#### Ejemplos
+
+En esta sección se provee con código que muestra cómo se utiliza la función. Tiene que ser un ejemplo que pueda ser reproducible, sin errores, sin importar las condiciones que los usuarios tengan (versiones, librerías, etc.). Además los ejemplos tienen que ser simples y fáciles de leer.
+
+``` r
+#' @examples
+#' fruit <- c("apple", "banana", "pear", "pineapple")
+#' str_detect(fruit, "a")
+#' str_detect(fruit, "^a")
+#' str_detect(fruit, "a$")
+#' 
+#' # Also vectorised over pattern
+#' str_detect("aecfg", letters)
+```
+
+:::: callout-note
+## Ejercicio
+
+Documentar la función `substract()`
+
+``` r
+substract <- function(a,b){
+  c <- a - b
+  return(c)
+}
+```
+
+::: {.callout-tip icon="false" collapse="true"}
+### Solución
+
+``` r
+#' Restar dos números enteros
+#'
+#' @param a Integer. Primer número a restar.
+#' @param b Integer. Segundo número a restar.
+#'
+#' @examples
+#' substract(10,1)
+#' substract(3, 2)
+#' @returns Integer. Resultado de la resta de los dos números entregados por el usuario.
+#' @export
+substract <- function(a,b){
+  c <- a - b
+  return(c)
+}
+```
+:::
+::::
+
+## Programación defensiva
+
+La programación defensiva se refiere a un conjunto de precauciones que tomamos para que dentro de nuestras funciones evitemos posibles errores que dificulten el uso del código para nuestros usuarios.
+
+Por ejemplo, algunas de las funciones que revisaron en la sesión anterior fueron:
+
+| Función | ¿Detiene ejecución? | Tipo de salida | Personalizable | Uso principal |
+|---------------|---------------|---------------|---------------|---------------|
+| `stop()` | ❌ Sí | Error | ✔️ Sí | Error crítico, no se puede continuar |
+| `stopifnot()` | ❌ Sí | Error | ❌ No | Validación rápida de condiciones |
+| `assert_that()` | ❌ Sí | Error | ✔️ Sí | Validación con mensajes más claros |
+| `warning()` | ✔️ No | Advertencia (warning) | ✔️ Sí | Algo no ideal, pero se puede continuar |
+| `message()` | ✔️ No | Mensaje informativo | ✔️ Sí | Informar al usuario |
+
+: Fuente:[ABC de las funciones](https://haydeeperuyero.github.io/ABC_funciones/)
+
+#### try
+
+A veces queremos que nuestra función continúe a pesar de que algunos de los elementos fallen. Por ejemplo, si queremos procesar varios elementos de entrada, podemos manejar los errores y filtrarlos después de que se ejecute el código.
+
+La función `try()` nos permite hacer eso. Cuando ocurre un error durante la evaluación de una expresión, el resultado se guarda como un objeto de clase `"try-error"`, que después podemos identificar o filtrar sin detener el flujo de la función.
+
+```{r}
+# Sabemos que new_variable no existe, por lo tanto cuando intente revisar si es
+# menor a 5 regresará un error. 
+
+# new_variable < 5
+
+# Con la función try solo regresa el mensaje de error pero no lo considera error.
+
+try(sqrt(new_variable))
+
+# Incluso podemos silenciar el mensaje
+try(sqrt(new_variable), silent = TRUE)
+
+# O guardar el error en un objeto de clase try-error
+err <- try(sqrt(new_variable), silent = TRUE)
+
+err
+
+```
+
+En el contexto de una función:
+
+```{r}
+
+# Si a esta función le pasamos como argumento una variable que no hemos definido
+# dará error
+test <- function(variable){
+      cat(
+        "La raiz cuadrada de ", variable, "es: ", sqrt(variable),"\n"
+      )
+}
+
+test(3)
+test(5)
+try(test(z))
+```
+
+
+```{r}
+# En el caso en el que quisieramos evaluar una lista de objetos y en uno de
+# ellos tuvieramos un valor no válido,podríamos detectar el error con try sin
+# detener la función para el resto de los objetos.
+
+list <- list(2,4,5,"9",8,-9)
+
+test <- function(variable){
+  try(
+    cat("La raíz de", variable, "es", sqrt(variable), "\n"), 
+    silent = TRUE)
+  }
+
+for(i in seq_along(list)){
+  test(list[[i]])
+}
+
+```
+
+#### tryCatch
+
+Primero, tomemos la función de raiz cuadrada y generemos los casos de posibles entradas que se podrían recibir:
+
+1.  Números positivos (caso esperado)
+2.  Números negativos
+3.  Formato de caracter
+    1.  Números positivos o negativos en formato de caracter
+    2.  Letras
+4.  Valores lógicos
+
+:::: callout-note
+¿Qué condicionales y funciones de programación defensiva podríamos usar para cada caso?
+
+Por ejemplo:
+
+```{r}
+# Números negativos 
+
+square_root <- function(variable){
+  
+  if(variable < 0){
+    stop("La variable es < 0, no se puede calcular la raiz cuadrada")
+  }
+  
+  return(sqrt(variable))
+  
+}
+```
+
+::: {.callout-tip collapse="true"}
+### Solución
+
+```{r}
+
+square_root <- function(variable){
+  # Caso 4: La variable es un valor lógico
+   if(is.logical(variable)){
+        stop("The variable is logical. Expected numeric\n")
+      }
+  # Caso 3: Formato de caracter
+      if(!is.numeric(variable)){
+        
+        # Caso 3a: Letras
+        if(is.na(suppressWarnings(as.numeric(variable)))){
+          stop("The variable is invalid, the sqrt could not be calculated\n")
+        }
+        
+        # Caso 3b: Números positivos o negativos en formato de caracter
+        variable <- as.numeric(variable)
+        message("The variable was converted to numeric")
+      }
+      
+      # Caso 2: Números negativos
+      if(variable < 0){
+        stop("Variable is < 0, sqrt could not be calculated\n")
+      }
+      
+      return(sqrt(variable))
+    }
+  
+```
+:::
+::::
+
+La función `tryCatch()` nos permite no solo intentar ejecutar una expresión, sino también definir qué hacer cuando ocurre un error o un warning. Por ejemplo, en el caso de la raíz cuadrada, nos gustaría que solo se ejecuten los casos válidos (1 y 3a). Además, queremos que los errores nos ayuden a identificar qué tipo de problema estamos cometiendo en los valores de entrada y, en esos casos, evitar que la función se detenga, informando del error y devolviendo valores `NA`.
+
+``` r
+
+tryCatch(
+  expr = {
+    # Your code goes here
+  },
+  error = function(e){
+    # Optional
+    # Do this if an error is caught
+  },
+  warning = function(w){
+    # Optional
+    # Do this if a warninig is caught
+  },
+  message = function(m){
+    # Optional
+    # Print message
+  },
+  finally = {
+    # Optional 
+    # Do this before quitting tryCatch
+  }
+)
+```
+
+```{r}
+
+square_root <- function(variable){
+  tryCatch(
+    expr = {
+      
+      if(is.logical(variable)){
+        stop("The variable is logical. Expected numeric\n")
+      }
+      
+      if(!is.numeric(variable)){
+        if(is.na(suppressWarnings(as.numeric(variable)))){
+          stop("The variable is invalid, the sqrt could not be calculated\n")
+        }
+        variable <- as.numeric(variable)
+        message("The variable was converted to numeric")
+      }
+      
+      if(variable < 0){
+        stop("Variable is < 0, sqrt could not be calculated\n")
+      }
+      
+      return(sqrt(variable))
+    },
+    error = function(e){
+      message(e)
+      cat("\n")
+      return(NA)
+    },
+    warning = function(w){
+      warning(w)
+      return(NA)
+    }
+  )
+}
+
+```
+
+```{r}
+square_root(2)
+try(square_root(-2))
+try(square_root("-2"))
+try(square_root("a"))
+try(square_root(T))
+
+# La función sqrt ya tiene otros errores programados, estos también se muestran e igualmente nos regresa un valor de NA. 
+try(square_root(data.frame(c(1,2,3),c(1,2,3))))
+try(square_root(c(1,2,3)))
+```
+
+## Ejercicio 
+
+:::{.callout-note}
+
+Documenta la función de `square_root` que acabamos de generar utilizando roxygen. 
+
+**Nota:** Recuerda que es muy importante informarle al usuario que en caso de error el resultado de la función será `NA`
+
+:::{.callout-tip collapse='true'}
+### Solución
+
+```{r}
+
+#' Raiz cuadrada con manejo de errores
+#'
+#' @param variable Numeric. Número del qué se quiere obtener la raiz cuadrada.
+#'
+#' @returns Numeric o NA. En caso de que la función se haya podido ejecutar devuelve la raiz cuadrada de la variable. En caso de que no, devuelve NA. 
+#' 
+#' @details Algunos de los casos en donde la función devuelve NA son cuando la variable de entrada:
+#' * Es un valor lógico
+#' * Es un número < 0 
+#' * Es un objeto distinto a un sólo elemento
+#' * Es una letra u otro caracter que no pueda ser transformado a número.
+#' Si la variable de entrada son números en formato de caracter, la función los transformará a número automáticamente.
+#'
+#' @examples
+#' square_root(2)
+#' try(square_root(-2))
+#' try(square_root("-2"))
+#' try(square_root("a"))
+#' try(square_root(T))
+#' @export
+square_root <- function(variable){
+  tryCatch(
+    expr = {
+      
+      if(is.logical(variable)){
+        stop("The variable is logical. Expected numeric\n")
+      }
+      
+      if(!is.numeric(variable)){
+        if(is.na(suppressWarnings(as.numeric(variable)))){
+          stop("The variable is invalid, the sqrt could not be calculated\n")
+        }
+        variable <- as.numeric(variable)
+        message("The variable was converted to numeric")
+      }
+      
+      if(variable < 0){
+        stop("Variable is < 0, sqrt could not be calculated\n")
+      }
+      
+      return(sqrt(variable))
+    },
+    error = function(e){
+      message(e)
+      cat("\n")
+      return(NA)
+    },
+    warning = function(w){
+      warning(w)
+      return(NA)
+    }
+  )
+}
+```
+
+
+:::
+:::
+
+## Funciones para crear un mini paquete
 
 ```{r}
 # install.packages("devtools")
 # install.packages("usethis")
 # install.packages("roxygen2")
+# install.packages("stringr")
 
 library(devtools)
 library(usethis)
@@ -19,35 +614,6 @@ library(roxygen2)
 library(stringr)
 
 ```
-
-Los comentarios de Roxygen2 se pueden utilizar para documentar nuestras funciones aún si no las vamos a utilizar en algún paquete. Sin embargo, en este taller, para ver el flujo de trabajo completo, vamos a generar un mini paquete.
-
-Primero vamos a crear un proyecto de R de tipo paquete utilizando la función `create_package()` del paquete devtools. El argumento de la función debe ser la ruta a donde lo queremos guardar y el directorio debe llamarse de la forma en la que queremos llamar nuestro paquete. 
-
-```{r}
-#| eval: false
-
-# Crear un repositorio de paquete
-usethis::create_package("/home/sofia/Documents/talleres/RegexTools")
-
-```
-
-Automáticamente, la función va a generar la estructura básica de un paquete que contiene:
-
-```{r}
-library(fs)
-
-fs::dir_tree("../RegexTools/", recurse = F,all = T)
-
-```
-
-1. Un documento de proyecto `randomR.Rproj`
-2. Documentos para indicar los archivos que se deben ignorar cuando se construya el paquete desde source (`.Rbuildignore`) y documentos que se deben ignorar cuando guardemos nuestro historial de versiones y lo conectemos con github (`.gitignore`)
-3. `DESCRIPTION` = Metadatos acerca del paquete
-4. `NAMESPACE` = Declara las funciones que el paquete exporta para uso externo y las que importa de otras herramientas (no se edita a mano)
-5. `R/` Directorio en el que guardaremos las funciones
-
-## Guardar funciones 
 
 Guardaremos algunas funciones que he escrito previamente. Son funciones que ayudan a llamar patrones útiles en las expresiones regulares que constantemente se me olvidan.
 
@@ -62,11 +628,11 @@ Mini repaso de las expresiones regex
 Cuando quiero extraer las letras que van después de un patron conocido podemos utilizar una expresión regular que mira hacia adelante. Por ejemplo, imaginemos que tenemos los siguientes códigos que identifican a distintas muestras:
 
 - La primera letra indica el género de la muestra y un punto
-- Después siguen 3 letras del epiteto específico 
+- Después siguen 3 letras del epiteto específico
 - Posteriormente 2 o 3 letras que identifican la localidad en donde fue colectada la muestra
-- Finalmente el número de muestra. 
+- Finalmente el número de muestra.
 
-A nosotros nos interesa identificar la localidad y el número de muestra. Podemos utilizar la expresión "lookbehind" (ver hacia atrás) para identificar si en las muestras están los patrones de las especies que nos interesan y recuperar las letras que están después. 
+A nosotros nos interesa identificar la localidad y el número de muestra. Podemos utilizar la expresión "lookbehind" (ver hacia atrás) para identificar si en las muestras están los patrones de las especies que nos interesan y recuperar las letras que están después.
 
 ```{r}
 #| echo: false
@@ -207,21 +773,258 @@ cat(
 )
 ```
 
-Estas funciones las vamos a guardar en dos archivos `chr_class.R` y `lookarounds.R` en el directorio R de nuestro paquete. Las funciones que están relacionadas (como lookahead y lookbehind) las podemos poner en un solo archivo, solo hay que cuidar que no se vuelvan archivos demasiado largos y difíciles de mantener. 
+Una vez que tenemos las funciones, escribiríamos la documentación utilizando Roxygen2:
 
-```{r}
-fs::dir_tree("../RegexTools/R/")
+```{.r}
+#' Clases de caracteres para expresiones regulares 
+#'
+#' Genera patrones de clases de caracteres en expresiones regulares de forma
+#' sencilla, evitando la necesidad de memorizar la sintaxis.
+#' 
+#' @param type Character. Tipo de clase de caracteres que se desea utilizar
+#'   (ver sección de detalles).
+#' @param negated Logical. Si es `TRUE`, devuelve la clase de caracteres negada.
+#'   Por defecto es `FALSE`.
+#' @param engine Character. Motor de expresiones regulares a utilizar.
+#'   Puede ser `"posix"` o `"perl"`.
+#'
+#' @returns Character. Una cadena con la expresión regular correspondiente a la
+#'   clase de caracteres seleccionada.
+#'
+#' @details
+#' Los valores posibles para `type` son:
+#' \describe{
+#'   \item{digit}{Dígitos (`0-9`).}
+#'   \item{lower}{Letras minúsculas (`a-z`).}
+#'   \item{upper}{Letras mayúsculas (`A-Z`).}
+#'   \item{alpha}{Caracteres alfabéticos.}
+#'   \item{alnum}{Caracteres alfanuméricos.}
+#'   \item{word}{Caracteres de palabra (alfanuméricos y `_`).}
+#'   \item{xdigit}{Dígitos hexadecimales (`0-9`, `A-F`, `a-f`).}
+#'   \item{blank}{Espacios y tabulaciones.}
+#'   \item{space}{Espacios en blanco (incluye saltos de línea, tabulaciones, etc.).}
+#'   \item{punct}{Caracteres de puntuación.}
+#'   \item{graph}{Caracteres visibles (alfanuméricos y de puntuación).}
+#'   \item{print}{Caracteres imprimibles (incluye espacios).}
+#'   \item{cntrl}{Caracteres de control (por ejemplo, `\\n`, `\\r`).}
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' # Clase de dígitos
+#' chr_class("digit")
+#'
+#' # Clase de letras mayúsculas (motor Perl)
+#' chr_class("upper", engine = "perl")
+#'
+#' # Clase de espacios negada
+#' chr_class("space", negated = TRUE, engine = "perl")
+chr_class <- function(type, negated = FALSE, engine = c("posix", "perl")) {
+  engine <- match.arg(engine)
+
+  clases <- list(
+    digit = c(posix = "[[:digit:]]", perl = "\\d"),
+    lower = c(posix = "[[:lower:]]", perl = "[a-z]"),
+    upper = c(posix = "[[:upper:]]", perl = "[A-Z]"),
+    alpha = c(posix = "[[:alpha:]]", perl = "[A-Za-z]"),
+    alnum = c(posix = "[[:alnum:]]", perl = "[A-Za-z0-9]"),
+    word = c(posix = "[[:alnum:]_]", perl = "\\w"),
+    xdigit = c(posix = "[[:xdigit:]]", perl = "[0-9A-Fa-f]"),
+    blank = c(posix = "[[:blank:]]", perl = "[ \\t]"),
+    space = c(posix = "[[:space:]]", perl = "\\s"),
+    punct = c(posix = "[[:punct:]]", perl = "[[:punct:]]"),
+    graph = c(posix = "[[:graph:]]", perl = "[[:graph:]]"),
+    print = c(posix = "[[:print:]]", perl = "[[:print:]]"),
+    cntrl = c(posix = "[[:cntrl:]]", perl = "[[:cntrl:]]")
+  )
+
+  if (!type %in% names(clases)) {
+    stop("Tipo no reconocido")
+  }
+
+  pattern <- clases[[type]][[engine]]
+
+  if (negated) {
+    pattern <- switch(
+      pattern,
+      "\\d" = "\\D",
+      "\\w" = "\\W",
+      "\\s" = "\\S",
+      paste0("[^", gsub("^\\[|\\]$", "", pattern), "]")
+    )
+  }
+
+  return(pattern)
+}
 ```
 
-Para crear los archivos utilizaremos el siguiente código que genera archivos con los nombres de las funciones en la carpeta R.
+```{.r}
+#' Constructor de lookahead para expresiones regulares
+#'
+#' Genera una expresión de lookahead (anticipación) que permite verificar si un
+#' patrón ocurre después de una posición dada sin consumirlo en el resultado.
+#'
+#' @param pattern_to_search Character. Patrón que se desea encontrar a continuación.
+#' @param negated Logical. Si es `TRUE`, genera un lookahead negativo (`(?!...)`),
+#'   que verifica que el patrón NO esté presente. Por defecto es `FALSE`.
+#'
+#' @returns Character. Una cadena que representa la expresión de lookahead.
+#'
+#' @details
+#' Los lookaheads permiten evaluar el contexto posterior sin incluirlo en la
+#' coincidencia. Son útiles para extraer patrones condicionados a lo que sigue.
+#'
+#' Regla general:
+#' \preformatted{
+#' patrón_a_extraer + lookahead(condición)
+#' }
+#'
+#' Ejemplo visual:
+#' \preformatted{
+#' Texto:   ABC123
+#'          ^^^
+#' Regex:   \\w+(?=123)
+#'
+#' Paso 1:  \\w+ consume "ABC"
+#'
+#' Paso 2:  (?=123) verifica que después venga "123"
+#'
+#' Resultado: "ABC"
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' library(stringr)
+#'
+#' texto <- "ABC123"
+#'
+#' # Extraer letras seguidas de "123"
+#' regex <- paste0("\\w+", lookahead("123"))
+#' str_extract(texto, regex)
+#'
+#' # Lookahead negativo
+#' texto2 <- "ABC123 XYZ999"
+#' regex2 <- paste0("\\w+", lookahead("123", negated = TRUE))
+#' str_extract_all(texto2, regex2)
+lookahead <- function(pattern_to_search, negated = FALSE){
+  if (negated) {
+    pattern <- paste0("(?!", pattern_to_search, ")")
+  } else {
+    pattern <- paste0("(?=", pattern_to_search, ")")
+  }
+  return(pattern)
+}
+
+```
+
+```{.r}
+#' Constructor de lookbehind para expresiones regulares
+#'
+#' Genera una expresión de *lookbehind* (retrospección) que permite verificar si un
+#' patrón ocurre antes de una posición dada sin incluirlo en el resultado.
+#'
+#' @param pattern_to_search Character. Patrón que debe encontrarse antes.
+#' @param negated Logical. Si es `TRUE`, genera un *lookbehind negativo* (`(?<!...)`),
+#'   que verifica que el patrón NO esté presente antes. Por defecto es `FALSE`.
+#'
+#' @returns Character. Una cadena que representa la expresión de *lookbehind*.
+#'
+#' @details
+#' Los *lookbehind* permiten evaluar el contexto previo sin incluirlo en la
+#' coincidencia. Son útiles para extraer patrones condicionados a lo que aparece antes.
+#'
+#' Regla general:
+#' \preformatted{
+#' lookbehind(condición) + patrón_a_extraer
+#' }
+#'
+#' Ejemplo visual:
+#' \preformatted{
+#' Texto:   ABC123
+#'             ^^^
+#' Regex:   \(?<=ABC)\\d+
+#'
+#' Paso 1:  (?<=ABC) verifica que antes venga "ABC"
+#'
+#' Paso 2:  \\d+ consume "123"
+#' 
+#'
+#' Resultado: "123"
+#' }
+#'
+#' Nota: en algunos casos, los *lookbehind negativos* pueden generar coincidencias
+#' parciales (por ejemplo, dentro de números). Para evitarlo, se recomienda usar
+#' límites de palabra (`\\b`).
+#'
+#' @export
+#'
+#' @examples
+#' library(stringr)
+#'
+#' texto <- "ABC123"
+#'
+#' # Extraer números precedidos por "ABC"
+#' regex <- paste0(lookbehind("ABC"), "\\d+")
+#' str_extract(texto, regex)
+#'
+#' # Lookbehind negativo con límite de palabra
+#' texto2 <- "ABC123 XYZ456"
+#' regex2 <- paste0(lookbehind("ABC", negated = TRUE), "\\b\\d+")
+#' str_extract_all(texto2, regex2)
+lookbehind <- function(pattern_to_search = NULL, negated = FALSE) {
+  if (negated) {
+    pattern <- paste0("(?<!", pattern_to_search, ")")
+  } else {
+    pattern <- paste0("(?<=", pattern_to_search, ")")
+  }
+  return(pattern)
+}
+```
+
+Estas funciones las vamos a guardar en dos archivos `chr_class.R` y `lookarounds.R` en el directorio R de nuestro paquete. Las funciones que están relacionadas (como lookahead y lookbehind) las podríamos poner en un solo archivo, solo hay que cuidar que no se vuelvan archivos demasiado largos y difíciles de mantener.
+
+Primero podemos guardar los archivos en el directorio actual y posteriormente guardar estos archivos en el directorio del paquete.
+
+```{r}
+dump("chr_class","chr_class.R")
+dump("lookahead","lookahead.R")
+dump("lookbehind","lookbehind.R")
+```
+
+## Crear un mini paquete
+
+Los comentarios de Roxygen2 se pueden utilizar para documentar nuestras funciones aún si no las vamos a utilizar en algún paquete. Sin embargo, en este taller, para ver el flujo de trabajo completo, vamos a generar un mini paquete.
+
+Primero vamos a crear un proyecto de R de tipo paquete utilizando la función `create_package()` del paquete devtools. El argumento de la función debe ser la ruta a donde lo queremos guardar y el directorio debe llamarse de la forma en la que queremos llamar nuestro paquete.
 
 ```{r}
 #| eval: false
-use_r("chr_class")
-use_r("lookarounds")
+
+# Crear un repositorio de paquete
+usethis::create_package("/home/sofia/Documents/talleres/RegexTools")
+
 ```
 
-Podemos cargar todas las funciones que creamos y revisar que estén cargadas como si vinieran de una librería en lugar de desde un script.
+Automáticamente, la función va a generar la estructura básica de un paquete que contiene:
+
+```{r}
+library(fs)
+
+fs::dir_tree("/home/sofia/Documents/talleres/RegexTools", recurse = F,all = T)
+
+```
+
+1.  Un documento de proyecto `RegexTools.Rproj`
+2.  Documentos para indicar los archivos que se deben ignorar cuando se construya el paquete desde source (`.Rbuildignore`) y documentos que se deben ignorar cuando guardemos nuestro historial de versiones y lo conectemos con github (`.gitignore`)
+3.  `DESCRIPTION` = Metadatos acerca del paquete
+4.  `NAMESPACE` = Declara las funciones que el paquete exporta para uso externo y las que importa de otras herramientas (no se edita a mano)
+5.  `R/` Directorio en el que guardaremos las funciones
+
+Posteriormente vamos a copiar los archivos que habíamos generado con las funciones documentadas de manera que en la carpeta R tendremos los archivos `chr_class.R`, `lookahead.R` y `lookbehind.R`.
+
+Después podemos cargar todas las funciones que creamos y revisar que estén cargadas como si vinieran de una librería en lugar de desde un script.
 
 ```{r}
 #| eval: false
@@ -238,9 +1041,9 @@ Posteriormente vamos a correr la función check() para actualizar muchos de los 
 check()
 ```
 
-Vamos a editar el archivo `DESCRIPTION` de la siguiente forma: 
+Vamos a editar el archivo `DESCRIPTION` de la siguiente forma:
 
-```{.r}
+``` r
 Package: RegexTools
 Title: Funciones para facilitar el uso de expresiones regulares
 Version: 0.0.0.9000
@@ -270,230 +1073,6 @@ Deberíamos tener 0 errores en este punto.
 check()
 ```
 
-
-## Documentación
-
-En los repositorios de paquetes de R, en la carpeta `man/` se encuentran archivos `.Rd` (*R documentation*) que contienen la documentación de todas las funciones, datos y objetos definidos en el paquete. Estos son los archivos que se muestran en la pestaña de ayuda cuando usamos `?funcion` o `help(funcion)`. Dichos documentos pueden renderizarse a HTML, PDF o texto plano.
-
-Sin embargo, existen herramientas que facilitan la creación y el manejo de los archivos `.Rd`. En particular, el paquete **roxygen2** permite incluir comentarios con un formato específico directamente sobre la definición de cada función, a partir de los cuales se generan automáticamente los archivos de documentación. Esto ofrece varias ventajas:
-
-1. Permite mantener la documentación junto al código que define cada función, facilitando su actualización cuando el código cambia.
-
-2. Permite usar Markdown para escribir la documentación de forma más sencilla y legible.
-
-3. Proporciona herramientas que automatizan la generación y el mantenimiento de los archivos .Rd.
-
-4. Facilita la reutilización y organización de la documentación en paquetes grandes, donde múltiples funciones pueden compartir descripciones o secciones.
-
-:::{.callout-tip}
-
-Para insertar la estructura de los comentarios de roxygen2 en Rstudio se puede hacer en *Code* > *Insertar esqueleto roxygen*. Automáticamente detectará que es una función y pre-llenará algunos de los campos.
-
-:::
-
-El esqueleto tiene el siguiente formato:
-
-1. Título de la función y breve descripción
-
-2. `@param argumento` Cada argumento debe ir definido. Aqui se pone el tipo de dato que puede recibir, cuál es su valor por default 
-
-```{.r}
-#' Title
-#'
-#' @param x
-#' @param y
-#'
-#' @returns
-#'
-#' @export
-#' @examples
-add <- function(x, y) {
-  x + y
-}
-
-```
-
-```{.r}
-#' Sumar dos números
-#'
-#' Calcula la suma de dos valores numéricos.
-#'
-#' @param x Numeric. Primer número a sumar.
-#' @param y Numeric. Segundo número a sumar.
-#'
-#' @returns Numeric. Resultado de la suma de `x` e `y`.
-#'
-#' @examples
-#' add(1, 1)
-#' add(10, 1)
-#'
-#' @export
-add <- function(x, y) {
-  x + y
-}
-```
-
-### Estructura de los bloques de roxygen
-
-Los comentarios de roxygen2 se organizan en bloques y etiquetas, y se identifican por comenzar con `#'` al inicio de cada línea.
-
-1. Todos los comentarios antes de una función (marcados por `#'` al inicio de la línea) constituyen un **bloque**.
-
-2. Un bloque está constituido por etiquetas (tags) que tienen el formato `@NombreEtiqueta ValorEtiqueta`, seguido de la descripción de la etiqueta. Por ejemplo, en la función de suma una etiqueta corresponde al argumento `x`:
-
-```
-#' @param x Numeric. Primer número a sumar.
-```
-
-3. Un bloque puede tener texto antes de la primera etiqueta (**introducción**)
-
-4. Por default, cada bloque genera un **tópico** (un archivo `.Rd`) en el directorio `man/`.
-
-:::{.callout-tip}
-
-La longitud de las líneas de la documentación sigue las prácticas de estilo del código. Para ajustarlas automáticamente puedes usar `ctrl + shift + /` o *Code* > *Reflow comment*
-
-:::
-
-**Ejemplo: str_unique()**
-
-La función `str_unique()` sirve para eliminar elementos duplicados en una vector de caracter. 
-
-::: {.column-screen-inset}
-:::{.columns }
-
-:::{.column width="45%"}
-
-El comentario de roxygen2 se debe ver así:
-
-```{.r}
-#' Remove duplicated strings
-#'
-#' `str_unique()` removes duplicated values, with optional control over
-#' how duplication is measured.
-#'
-#' @inheritParams str_detect
-#' @inheritParams str_equal
-#' @return A character vector, usually shorter than `string`.
-#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
-#' @examples
-#' str_unique(c("a", "b", "c", "b", "a"))
-#'
-#' str_unique(c("a", "b", "c", "B", "A"))
-#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
-#'
-#' # Use ... to pass additional arguments to stri_unique()
-#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
-#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
-#' @export
-
-```
-
-:::
-
-:::{.column width="5%"}
-
-:::
-
-:::{.column width="45%" align="left"}
-
-```{.r}
-------- Introducción -------
-#' Remove duplicated strings
-#'
-#' `str_unique()` removes duplicated values, with optional control over
-#' how duplication is measured.
-
------- Etiquetas -----------
-#' @inheritParams str_detect
-#' @inheritParams str_equal
-#' @return A character vector, usually shorter than `string`.
-#' @seealso [unique()], [stringi::stri_unique()] which this function wraps.
-#' @examples
-#' str_unique(c("a", "b", "c", "b", "a"))
-#'
-#' str_unique(c("a", "b", "c", "B", "A"))
-#' str_unique(c("a", "b", "c", "B", "A"), ignore_case = TRUE)
-#'
-#' # Use ... to pass additional arguments to stri_unique()
-#' str_unique(c("motley", "mötley", "pinguino", "pingüino"))
-#' str_unique(c("motley", "mötley", "pinguino", "pingüino"), strength = 1)
-#' @export
-
-```
-
-:::
-:::
-:::
-
-### Etiquetas y sintaxis importante
-
-#### Sintaxis
-
-1. Para referenciar código dentro de la documentación se utilizan las comillas invertidas (backticks) 
-
-```{.r}
-#' La función `ejemplo()` bla bla bla 
-```
-
-2. Para generar una liga a la documentación de otras funciones referidas en tu documentación utiliza corchetes 
-
-```{.r}
-#' ver función similar [stringr::str_unique()]
-```
-
-3. Referenciar viñetas (documentos con información o tutoriales acerca de las funciones de un paquete)
-
-```{.r}
-vignette("rd-formatting", package = "roxygen2")
-```
-
-4. Listas
-
-```{.r}
-#' Las ventajas de la función son:
-#' * Ventaja 1
-#' * Ventaja 2
-```
-
-#### Título, descripción y detalles
-
-- *Título*: Debe describir muy brevemente lo que hace una función. El título se debe pensar de forma que cuando el usuario lea el índice de funciones del paquete se lleve una idea de lo que hacen. 
-
-  - mutate(): Create, modify, and delete columns
-  - summarise(): Summarise each group down to one row
-  - filter(): Keep rows that match a condition
-  - select(): Keep or drop columns using their names and types
-  - arrange(): Order rows using column values
-
-- *Descripción*: Párrafo breve en el que se describe la función. Si es de un sólo párrafo se puede escribir sin una etiqueta de `@description` explícita.  
-
-- *Detalles*: Explicaciones adicionales (opcional), se escribe utilizando la etiqueta `@details`. Cuando se necesitan comunicar muchos detalles se puede dividir en secciones utilizando la etiqueta `@section`
-
-
-#### Argumentos
-
-Los argumentos se enuncian con la etiqueta `@param`. 
-
-- Se debe describir el tipo de objeto que se espera recibir en cada uno y qué acciones tienen. 
-- Muchas veces describen los valores que tienen por default 
-- En los casos en los que tienen un número limitado de opciones, estas pueden ser enlistadas. Cuando son muchas se puede poner en los detalles.
-- En algunos casos en los que los argumentos tienen la misma descripción se pueden agrupar separados por comas en la misma etiqueta: 
-
-  ```
-  @param x,y Par de vectores de caracter
-  ```
-
-#### Argumentos heredados
-
-En los casos en los que se tienen funciones muy relacionadas que comparten argumentos y su correspondiente descripción se pueden incluir directamente utilizando la etiqueta `@inheritParams`
-
-
-
-
-
-
-
 ## Flujo de trabajo de roxygen
 
 ```{mermaid}
@@ -508,6 +1087,3 @@ flowchart TD
   D --> B
     
 ```
-
-## 
-
